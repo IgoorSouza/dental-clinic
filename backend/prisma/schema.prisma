@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  SUPERADMIN
+  ADMIN
+}
+
+enum PaymentMethod {
+  DEBIT
+  CREDIT
+  CASH
+  CHECK
+  PIX
+}
+
+model User {
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  password String
+  role     Role
+
+  @@map("users")
+}
+
+model Schedule {
+  id             String       @id @default(uuid())
+  title          String
+  description    String?
+  price          Float
+  startTime      DateTime
+  endTime        DateTime
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  professionalId String
+  customer       Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId     String
+  Payment        Payment[]
+
+  @@unique([professionalId, startTime, endTime])
+  @@unique([customerId, startTime, endTime])
+  @@map("schedules")
+}
+
+model Professional {
+  id       String     @id @default(uuid())
+  name     String
+  crm      String     @unique
+  email    String?    @unique
+  phone    String?    @unique
+  Schedule Schedule[]
+
+  @@map("professionals")
+}
+
+model Payment {
+  id         String        @id @default(uuid())
+  amount     Float
+  method     PaymentMethod
+  date       DateTime      @default(now())
+  schedule   Schedule      @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  scheduleId String
+
+  @@map("payments")
+}
+
+model Customer {
+  id          String     @id @default(uuid())
+  name        String
+  email       String?    @unique
+  phone       String     @unique
+  birthDate   DateTime?
+  description String?
+  Schedule    Schedule[]
+
+  @@map("customers")
+}
