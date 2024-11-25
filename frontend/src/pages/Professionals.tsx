@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { api } from "../utils/axios";
 import Professional from "../types/professional";
 import close from "../assets/close.svg";
+import Inputmask from "inputmask";
+import { useClickAway } from "react-use";
+import loadingIcon from "../assets/loading.svg";
 
 export default function Professionals(): JSX.Element {
   const [professionals, setProfessionals] = useState<Professional[]>(
@@ -13,19 +16,37 @@ export default function Professionals(): JSX.Element {
   const [crm, setCrm] = useState<string>("");
   const [phone, setPhone] = useState<string | undefined>();
   const [email, setEmail] = useState<string | undefined>();
+  const [loading, setLoading] = useState<boolean>(true);
   const [showModal, setShowModal] = useState<boolean>(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const professionalPhone = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     api.get("/professionals").then(({ data: professionals }) => {
       setProfessionals(professionals);
+      setLoading(false);
     });
   }, []);
 
+  useEffect(() => {
+    const mask = new Inputmask("(99) 99999-9999");
+    const professionalPhoneRef = professionalPhone.current;
+    if (professionalPhoneRef) mask.mask(professionalPhoneRef);
+  }, [showModal]);
+
+  useClickAway(modalRef, () => setShowModal(false));
+
   function createProfessional(): void {
-    if (isStringEmpty(name) || isStringEmpty(crm)) {
+    if (
+      isStringEmpty(name) ||
+      isStringEmpty(crm) ||
+      (phone && !isStringEmpty(phone) && phone.includes("_"))
+    ) {
       toast.error("Por favor, preencha os campos corretamente.");
       return;
     }
+
+    setLoading(true);
 
     const newProfessional = {
       name,
@@ -47,14 +68,22 @@ export default function Professionals(): JSX.Element {
         toast.error(
           "Erro ao criar profissional. Por favor, verifique os dados e tente novamente."
         );
-      });
+      })
+      .finally(() => setLoading(false));
   }
 
   function updateProfessional(): void {
-    if (isStringEmpty(name) || isStringEmpty(crm)) {
+    console.log(phone, !isStringEmpty(phone!), !phone?.includes("_"));
+    if (
+      isStringEmpty(name) ||
+      isStringEmpty(crm) ||
+      (phone && !isStringEmpty(phone) && phone.includes("_"))
+    ) {
       toast.error("Por favor, preencha os campos corretamente.");
       return;
     }
+
+    setLoading(true);
 
     const newProfessional = {
       id,
@@ -82,10 +111,13 @@ export default function Professionals(): JSX.Element {
         toast.error(
           "Erro ao atualizar profissional. Por favor, verifique os dados e tente novamente."
         );
-      });
+      })
+      .finally(() => setLoading(false));
   }
 
   function deleteProfessional(professionalId: string): void {
+    setLoading(true);
+
     api
       .delete(`/professionals/delete/${professionalId}`)
       .then(() => {
@@ -102,7 +134,8 @@ export default function Professionals(): JSX.Element {
         toast.error(
           "Erro ao excluir profissional. Por favor, tente novamente mais tarde."
         );
-      });
+      })
+      .finally(() => setLoading(false));
   }
 
   function clear(): void {
@@ -115,6 +148,14 @@ export default function Professionals(): JSX.Element {
 
   function isStringEmpty(string: string): boolean {
     return string.trim() === "";
+  }
+
+  if (loading) {
+    return (
+      <div className="h-screen flex justify-center items-start">
+        <img src={loadingIcon} className="w-24 animate-spin mt-40" />
+      </div>
+    );
   }
 
   return (
@@ -174,7 +215,10 @@ export default function Professionals(): JSX.Element {
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center">
           <div className="fixed inset-0 bg-black opacity-50" />
-          <div className="bg-white p-6 rounded-lg shadow-lg z-10 w-full max-w-[600px]">
+          <div
+            className="bg-white p-6 rounded-lg shadow-lg z-10 w-full max-w-[600px]"
+            ref={modalRef}
+          >
             <div className="flex justify-between">
               <h2 className="text-2xl font-bold mb-4">
                 Detalhes do Profissional
@@ -223,10 +267,10 @@ export default function Professionals(): JSX.Element {
                 <input
                   type="tel"
                   id="professional-phone"
+                  ref={professionalPhone}
                   placeholder="Insira o telefone aqui..."
                   className="p-3 mb-4 rounded-lg outline-none bg-slate-200"
                   value={phone}
-                  maxLength={15}
                   onChange={(event) => setPhone(event.target.value)}
                 />
 

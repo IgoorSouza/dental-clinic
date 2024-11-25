@@ -14,8 +14,14 @@ export default class CustomerController {
 
     this.router.get("/", async (request, response) => {
       try {
-        const customers = await this.customerService.getCustomers();
-        response.status(200).send(customers);
+        const { page, pageSize, name } = request.query;
+
+        const customersData = await this.customerService.getCustomers(
+          page as string,
+          pageSize as string,
+          name as string
+        );
+        response.status(200).send(customersData);
       } catch (error: any) {
         console.log(error);
         response.status(500).send("Error while getting customers.");

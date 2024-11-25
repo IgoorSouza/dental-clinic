@@ -1,5 +1,6 @@
 import CustomerRepository from "../repositories/CustomerRepository";
 import Customer from "../types/customer";
+import CustomersData from "../types/customers-data";
 
 export default class CustomerService {
   private customerRepository: CustomerRepository;
@@ -8,8 +9,8 @@ export default class CustomerService {
     this.customerRepository = new CustomerRepository();
   }
 
-  async getCustomers(): Promise<Customer[]> {
-    return await this.customerRepository.getCustomers();
+  async getCustomers(page: string, pageSize: string, name?: string): Promise<CustomersData> {
+    return await this.customerRepository.getCustomers(Number(page), Number(pageSize), name);
   }
 
   async createCustomer(customer: Customer): Promise<Customer> {

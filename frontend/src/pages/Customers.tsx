@@ -1,12 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../utils/axios";
 import Customer from "../types/customer";
 import close from "../assets/close.svg";
 import toast from "react-hot-toast";
-import { format, parseISO } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
+import { useClickAway } from "react-use";
+import loadingIcon from "../assets/loading.svg";
 
 export default function Customers(): JSX.Element {
   const [customers, setCustomers] = useState<Customer[]>([] as Customer[]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [page, setPage] = useState<number>(1);
+  const [totalCustomers, setTotalCustomers] = useState<number>(0);
+  const [filter, setFilter] = useState<string>("");
+  const [showRemoveFilter, setShowRemoveFilter] = useState<boolean>(false);
   const [id, setId] = useState<string | undefined>();
   const [name, setName] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
@@ -14,18 +21,67 @@ export default function Customers(): JSX.Element {
   const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
   const [description, setDescription] = useState<string | undefined>();
   const [showModal, setShowModal] = useState<boolean>(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const customerPhone = useRef<HTMLInputElement>(null);
+  const pageSize = 30;
 
   useEffect(() => {
-    api.get("/customers").then(({ data: customers }) => {
-      setCustomers(customers);
-    });
-  }, []);
+    if (!isStringEmpty(filter)) return;
+
+    api
+      .get(`/customers?page=${page}&pageSize=${pageSize}&name=${filter}`)
+      .then(({ data: customersData }) => {
+        setCustomers(customersData.customers);
+        setTotalCustomers(customersData.totalCustomers);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error(
+          "Ocorreu um erro ao buscar os clientes. Por favor, tente novamente mais tarde."
+        );
+      });
+  }, [page, filter]);
+
+  useEffect(() => {
+    const mask = new Inputmask("(99) 99999-9999");
+    const customerPhoneRef = customerPhone.current;
+    if (customerPhoneRef) mask.mask(customerPhoneRef);
+  }, [showModal]);
+
+  useClickAway(modalRef, () => setShowModal(false));
+
+  function getCustomers(): void {
+    setLoading(true);
+    const url = `/customers?page=${page}&pageSize=${pageSize}&name=${filter}`;
+
+    api
+      .get(url)
+      .then(({ data: customersData }) => {
+        setCustomers(customersData.customers);
+        setTotalCustomers(customersData.totalCustomers);
+        setLoading(false);
+        if (!isStringEmpty(filter)) setShowRemoveFilter(true);
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error(
+          "Ocorreu um erro ao buscar os clientes. Por favor, reinicie a página e tente novamente."
+        );
+      });
+  }
 
   function createCustomer(): void {
-    if (isStringEmpty(name) || isStringEmpty(phone)) {
+    if (
+      isStringEmpty(name) ||
+      isStringEmpty(phone) ||
+      (phone && !isStringEmpty(phone) && phone.includes("_"))
+    ) {
       toast.error("Por favor, preencha os campos corretamente.");
       return;
     }
+
+    setLoading(true);
 
     const newCustomer: Customer = {
       name,
@@ -37,9 +93,9 @@ export default function Customers(): JSX.Element {
 
     api
       .post("/customers/new", newCustomer)
-      .then(({ data }) => {
-        setCustomers([...customers, data]);
+      .then(() => {
         setShowModal(false);
+        getCustomers();
         clear();
         toast.success("Cliente criado com sucesso!");
       })
@@ -48,14 +104,21 @@ export default function Customers(): JSX.Element {
         toast.error(
           "Erro ao criar cliente. Por favor, verifique os dados e tente novamente."
         );
-      });
+      })
+      .finally(() => setLoading(false));
   }
 
   function updateCustomer(): void {
-    if (isStringEmpty(name) || isStringEmpty(phone)) {
+    if (
+      isStringEmpty(name) ||
+      isStringEmpty(phone) ||
+      (phone && !isStringEmpty(phone) && phone.includes("_"))
+    ) {
       toast.error("Por favor, preencha os campos corretamente.");
       return;
     }
+
+    setLoading(true);
 
     const newCustomer: Customer = {
       id,
@@ -68,14 +131,9 @@ export default function Customers(): JSX.Element {
 
     api
       .put("/customers/update", newCustomer)
-      .then(({ data }) => {
-        const updatedCustomerIndex = customers.findIndex(
-          (customer) => customer.id === id
-        );
-        const updatedCustomers = [...customers];
-        updatedCustomers[updatedCustomerIndex] = data;
-        setCustomers(updatedCustomers);
+      .then(() => {
         setShowModal(false);
+        getCustomers();
         clear();
         toast.success("Cliente atualizado com sucesso!");
       })
@@ -84,23 +142,31 @@ export default function Customers(): JSX.Element {
         toast.error(
           "Erro ao atualizar cliente. Por favor, verifique os dados e tente novamente."
         );
-      });
+      })
+      .finally(() => setLoading(false));
   }
 
   function deleteCustomer(id: string): void {
+    setLoading(true);
+
     api
       .delete(`/customers/delete/${id}`)
       .then(() => {
-        const updatedCustomers = customers.filter((user) => user.id !== id);
-        setCustomers(updatedCustomers);
         setShowModal(false);
+        getCustomers();
         clear();
         toast.success("Cliente excluído com sucesso!");
       })
       .catch((error) => {
         console.log(error);
         toast.error("Erro ao excluir cliente. Por favor, tente novamente.");
-      });
+      })
+      .finally(() => setLoading(false));
+  }
+
+  function filterCustomers() {
+    if (isStringEmpty(filter)) return;
+    getCustomers();
   }
 
   function clear(): void {
@@ -116,20 +182,61 @@ export default function Customers(): JSX.Element {
     return string.trim() === "";
   }
 
+  if (loading) {
+    return (
+      <div className="h-screen flex justify-center items-start">
+        <img src={loadingIcon} className="w-24 animate-spin mt-40" />
+      </div>
+    );
+  }
+
   return (
     <>
       <h1 className="text-4xl mt-16 mb-8 text-center">Clientes</h1>
 
       <div className="h-screen flex flex-col max-w-[800px] mx-auto">
-        <button
-          type="button"
-          className="mt-3 mb-5 ml-auto px-3 py-2 bg-black text-white rounded-lg hover:opacity-80 transition-all duration-400"
-          onClick={() => {
-            setShowModal(true);
-          }}
-        >
-          Novo Cliente
-        </button>
+        <div className="flex items-center mb-4">
+          <label htmlFor="search" className="mr-2">
+            Filtrar:{" "}
+          </label>
+          <input
+            type="text"
+            id="search"
+            placeholder="Nome do cliente..."
+            value={filter}
+            className="p-2 rounded-lg outline-none bg-slate-200"
+            onChange={(event) => setFilter(event.target.value)}
+          />
+          <button
+            type="button"
+            className="ml-2 px-4 py-2 bg-black text-white rounded-lg hover:opacity-80 transition-all duration-400"
+            onClick={filterCustomers}
+          >
+            Filtrar
+          </button>
+
+          {showRemoveFilter && (
+            <button
+              className="ml-2 px-4 py-2 bg-black text-white rounded-lg hover:opacity-80 transition-all duration-400"
+              onClick={() => {
+                setFilter("");
+                setShowRemoveFilter(false);
+              }}
+            >
+              Remover filtro
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="mt-3 ml-auto px-3 py-2 bg-black text-white rounded-lg hover:opacity-80 transition-all duration-400"
+            onClick={() => {
+              setShowModal(true);
+            }}
+          >
+            Novo Cliente
+          </button>
+        </div>
 
         <table className="w-full border-collapse self-center">
           <thead>
@@ -176,12 +283,48 @@ export default function Customers(): JSX.Element {
             ))}
           </tbody>
         </table>
+
+        {totalCustomers > 0 && (
+          <div className="flex justify-end items-center gap-3 mt-3">
+            <button
+              className={`px-2 bg-black text-white rounded-lg transition-all duration-400 ${
+                totalCustomers <= pageSize ? "opacity-50" : "hover:opacity-80"
+              }`}
+              disabled={totalCustomers <= pageSize || page === 1}
+              onClick={() => {
+                setPage(page - 1);
+              }}
+            >
+              {"<"}
+            </button>
+
+            <p> Página {page}</p>
+
+            <button
+              className={`px-2 bg-black text-white rounded-lg transition-all duration-400 ${
+                totalCustomers <= pageSize ? "opacity-50" : "hover:opacity-80"
+              }`}
+              disabled={
+                totalCustomers <= pageSize ||
+                totalCustomers - page * pageSize <= 0
+              }
+              onClick={() => {
+                setPage(page + 1);
+              }}
+            >
+              {">"}
+            </button>
+          </div>
+        )}
       </div>
 
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center">
           <div className="fixed inset-0 bg-black opacity-50" />
-          <div className="bg-white p-6 rounded-lg shadow-lg z-10 w-full max-w-[600px]">
+          <div
+            className="bg-white p-6 rounded-lg shadow-lg z-10 w-full max-w-[600px]"
+            ref={modalRef}
+          >
             <div className="flex justify-between">
               <h2 className="text-2xl font-bold mb-4">Detalhes do Cliente</h2>
               <img
@@ -215,10 +358,10 @@ export default function Customers(): JSX.Element {
                 <input
                   type="tel"
                   id="customer-phone"
+                  ref={customerPhone}
                   placeholder="Insira o telefone aqui..."
                   className="p-3 mb-4 rounded-lg outline-none bg-slate-200"
                   value={phone}
-                  maxLength={15}
                   onChange={(event) => setPhone(event.target.value)}
                 />
 
@@ -243,9 +386,10 @@ export default function Customers(): JSX.Element {
                   id="customer-birthdate"
                   className="p-3 mb-3 rounded-lg outline-none bg-slate-200"
                   value={birthDate ? format(birthDate, "yyyy-MM-dd") : ""}
-                  onChange={(event) =>
-                    setBirthDate(parseISO(event.target.value))
-                  }
+                  onChange={(event) => {
+                    const date = parseISO(event.target.value);
+                    if (isValid(date)) setBirthDate(date);
+                  }}
                 />
 
                 <label className="ml-2 mb-1" htmlFor="customer-description">

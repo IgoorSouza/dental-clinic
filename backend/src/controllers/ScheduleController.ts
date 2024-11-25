@@ -34,7 +34,7 @@ export default class ScheduleController {
         response.status(200).send(schedule);
       } catch (error: any) {
         console.log(error);
-        response.status(500).send("Error while creating schedule.");
+        response.status(500).send(error.message);
       }
     });
 
@@ -49,7 +49,7 @@ export default class ScheduleController {
           response.status(200).send(schedule);
         } catch (error: any) {
           console.log(error);
-          response.status(500).send("Error while updating schedule.");
+          response.status(500).send(error.message);
         }
       }
     );

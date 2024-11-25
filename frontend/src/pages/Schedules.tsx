@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../utils/axios";
 import close from "../assets/close.svg";
 import toast from "react-hot-toast";
@@ -7,6 +7,8 @@ import Professional from "../types/professional";
 import Customer from "../types/customer";
 import { addHours, format, parseISO, subHours } from "date-fns";
 import Payments from "../components/Payments";
+import { useClickAway } from "react-use";
+import loadingIcon from "../assets/loading.svg";
 
 export default function Schedules(): JSX.Element {
   const [date, setDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
@@ -28,17 +30,23 @@ export default function Schedules(): JSX.Element {
     Customer | undefined
   >();
   const [showModal, setShowModal] = useState<boolean>(false);
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [customerSearchTerm, setCustomerSearchTerm] = useState<string>("");
+  const [professionalSearchTerm, setProfessionalSearchTerm] =
+    useState<string>("");
   const [isProfessionalInputFocused, setIsProfessionalInputFocused] =
     useState<boolean>(false);
   const [isCustomerInputFocused, setIsCustomerInputFocused] =
     useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const filteredProfessionals = professionals.filter((professional) =>
-    professional.name.toLowerCase().includes(searchTerm.toLowerCase())
+    professional.name
+      .toLowerCase()
+      .includes(professionalSearchTerm.toLowerCase())
   );
   const filteredCustomers = customers.filter((customer) =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+    customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase())
   );
 
   useEffect(() => {
@@ -48,15 +56,17 @@ export default function Schedules(): JSX.Element {
         setSchedules(schedules);
       });
 
-    api.get("/customers").then(({ data: customers }) => {
-      setCustomers(customers);
+    api.get("/customers?page=1&pageSize=10000").then(({ data: customers }) => {
+      setCustomers(customers.customers);
     });
 
     api.get("/professionals").then(({ data: professionals }) => {
       setProfessionals(professionals);
       if (!selectedProfessional?.id) setSelectedProfessional(professionals[0]);
+      setLoading(false);
     });
   }, [date, selectedProfessional]);
+  useClickAway(modalRef, () => setShowModal(false));
 
   function createSchedule(): void {
     if (
@@ -75,6 +85,8 @@ export default function Schedules(): JSX.Element {
       toast.error("O horário de fim deve ser maior que o horário de início.");
       return;
     }
+
+    setLoading(true);
 
     const newSchedule: Schedule = {
       title,
@@ -96,10 +108,15 @@ export default function Schedules(): JSX.Element {
       })
       .catch((error) => {
         console.log(error);
-        toast.error(
-          "Erro ao criar horário. Por favor, verifique os dados e tente novamente."
-        );
-      });
+        toast.error(() => {
+          if (error.response.data === "Schedule is not available.") {
+            return "O horário informado não está disponível.";
+          }
+
+          return "Erro ao criar horário. Por favor, verifique os dados e tente novamente.";
+        });
+      })
+      .finally(() => setLoading(false));
   }
 
   function updateSchedule(): void {
@@ -119,6 +136,8 @@ export default function Schedules(): JSX.Element {
       toast.error("O horário de fim deve ser maior que o horário de início.");
       return;
     }
+
+    setLoading(true);
 
     const newSchedule: Schedule = {
       id,
@@ -146,13 +165,20 @@ export default function Schedules(): JSX.Element {
       })
       .catch((error) => {
         console.log(error);
-        toast.error(
-          "Erro ao criar horário. Por favor, verifique os dados e tente novamente."
-        );
-      });
+        toast.error(() => {
+          if (error.response.data === "Schedule is not available.") {
+            return "O horário informado não está disponível.";
+          }
+
+          return "Erro ao criar horário. Por favor, verifique os dados e tente novamente.";
+        });
+      })
+      .finally(() => setLoading(false));
   }
 
   function deleteSchedule(id: string): void {
+    setLoading(true);
+
     api
       .delete(`/schedules/delete/${id}`)
       .then(() => {
@@ -167,7 +193,8 @@ export default function Schedules(): JSX.Element {
       .catch((error) => {
         console.log(error);
         toast.error("Erro ao excluir horário. Por favor, tente novamente.");
-      });
+      })
+      .finally(() => setLoading(false));
   }
 
   function clear(): void {
@@ -178,10 +205,20 @@ export default function Schedules(): JSX.Element {
     setEndTime(subHours(new Date(), 3));
     setDescription("");
     setSelectedCustomer(undefined);
+    setCustomerSearchTerm("");
+    setProfessionalSearchTerm("");
   }
 
   function isStringEmpty(string: string): boolean {
     return string.trim() === "";
+  }
+
+  if (loading) {
+    return (
+      <div className="h-screen flex justify-center items-start">
+        <img src={loadingIcon} className="w-24 animate-spin mt-40" />
+      </div>
+    );
   }
 
   return (
@@ -207,32 +244,21 @@ export default function Schedules(): JSX.Element {
                 Profissional:{" "}
               </label>
               <div>
-                {/* <input
-                  id="professional"
-                  type="text"
-                  placeholder="Filtrar profissionais..."
-                  className="ml-1 border border-slate-600 py-1 px-2"
-                  value={selectedProfessional?.name}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  onFocus={() => setIsProfessionalInputFocused(true)}
-                  onBlur={() => {
-                    if (!selectedProfessional) setSearchTerm("");
-                    setIsProfessionalInputFocused(false);
-                  }}
-                /> */}
                 <input
                   type="text"
                   placeholder="Filtrar profissionais..."
                   className="p-2 mb-1 rounded-lg outline-none bg-slate-200"
                   value={
                     isProfessionalInputFocused
-                      ? searchTerm
+                      ? professionalSearchTerm
                       : selectedProfessional?.name
                   }
-                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onChange={(event) =>
+                    setProfessionalSearchTerm(event.target.value)
+                  }
                   onFocus={() => setIsProfessionalInputFocused(true)}
                   onBlur={() => {
-                    if (!selectedProfessional) setSearchTerm("");
+                    if (!selectedProfessional) setProfessionalSearchTerm("");
                     setIsProfessionalInputFocused(false);
                   }}
                 />
@@ -249,7 +275,7 @@ export default function Schedules(): JSX.Element {
                                 professional.id === findProfessional.id
                             );
 
-                            setSearchTerm("");
+                            setProfessionalSearchTerm("");
                             setSelectedProfessional(findProfessional);
                           }}
                         >
@@ -352,7 +378,10 @@ export default function Schedules(): JSX.Element {
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center">
           <div className="fixed inset-0 bg-black opacity-50" />
-          <div className="bg-white p-6 rounded-lg shadow-lg z-10 w-full max-w-[900px] max-h-[700px] overflow-y-auto">
+          <div
+            className="bg-white p-6 rounded-lg shadow-lg z-10 w-full max-w-[900px] max-h-[700px] overflow-y-auto"
+            ref={modalRef}
+          >
             <div className="flex justify-between">
               <h2 className="text-2xl font-bold mb-4">Detalhes do Horário</h2>
               <img
@@ -451,13 +480,15 @@ export default function Schedules(): JSX.Element {
                       className="p-3 mb-1 rounded-lg outline-none bg-slate-200"
                       value={
                         isCustomerInputFocused
-                          ? searchTerm
+                          ? customerSearchTerm
                           : selectedCustomer?.name
                       }
-                      onChange={(event) => setSearchTerm(event.target.value)}
+                      onChange={(event) =>
+                        setCustomerSearchTerm(event.target.value)
+                      }
                       onFocus={() => setIsCustomerInputFocused(true)}
                       onBlur={() => {
-                        if (!selectedCustomer) setSearchTerm("");
+                        if (!selectedCustomer) setCustomerSearchTerm("");
                         setIsCustomerInputFocused(false);
                       }}
                     />
@@ -495,13 +526,16 @@ export default function Schedules(): JSX.Element {
                       className="p-3 mb-1 rounded-lg outline-none bg-slate-200"
                       value={
                         isProfessionalInputFocused
-                          ? searchTerm
+                          ? professionalSearchTerm
                           : selectedProfessional?.name
                       }
-                      onChange={(event) => setSearchTerm(event.target.value)}
+                      onChange={(event) =>
+                        setProfessionalSearchTerm(event.target.value)
+                      }
                       onFocus={() => setIsProfessionalInputFocused(true)}
                       onBlur={() => {
-                        if (!selectedProfessional) setSearchTerm("");
+                        if (!selectedProfessional)
+                          setProfessionalSearchTerm("");
                         setIsProfessionalInputFocused(false);
                       }}
                     />
@@ -518,7 +552,7 @@ export default function Schedules(): JSX.Element {
                                     professional.id === findProfessional.id
                                 );
 
-                                setSearchTerm("");
+                                setProfessionalSearchTerm("");
                                 setSelectedProfessional(findProfessional);
                               }}
                             >
@@ -539,7 +573,7 @@ export default function Schedules(): JSX.Element {
                   onChange={(event) => setDescription(event.target.value)}
                 />
 
-                {id && <Payments scheduleId={id} />}
+                {id && <Payments scheduleId={id} price={price} />}
 
                 <div className="flex justify-end gap-x-4">
                   <button

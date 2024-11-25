@@ -57,11 +57,11 @@ export default function Auth(): JSX.Element {
   return (
     <div className="h-screen flex flex-col justify-center items-center auth-bg">
       <form
-        className="px-10 py-8 bg-white rounded-lg w-[80%] max-w-[600px] z-10"
+        className="px-10 py-12 bg-white rounded-lg w-[80%] max-w-[600px] z-10"
         onSubmit={authenticate}
       >
-        <div className="text-center mb-2">
-          <h1 className="text-3xl mb-2 mt-0">Seja bem-vindo(a)!</h1>
+        <div className="text-center mb-5">
+          <h1 className="text-4xl mb-2 mt-0">Seja bem-vindo(a)!</h1>
           <p>Por favor, faça o login antes de prosseguir.</p>
         </div>
 

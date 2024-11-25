@@ -5,6 +5,16 @@ import Schedule from "../types/schedule";
 export default class ScheduleRepository {
   private prisma: PrismaClient = Prisma.getInstance();
 
+  async getSchedulesByProfessional(
+    professionalId: string
+  ): Promise<Schedule[]> {
+    return await this.prisma.schedule.findMany({
+      where: {
+        professionalId,
+      },
+    });
+  }
+
   async getSchedulesByProfessionalAndDate(
     professionalId: string,
     startTime: Date,

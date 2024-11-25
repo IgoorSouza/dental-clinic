@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { api } from "../utils/axios";
@@ -7,6 +7,8 @@ import Role from "../types/role";
 import show from "../assets/show.svg";
 import hide from "../assets/hide.svg";
 import close from "../assets/close.svg";
+import { useClickAway } from "react-use";
+import loadingIcon from "../assets/loading.svg";
 
 export default function Users(): JSX.Element {
   const [users, setUsers] = useState<User[]>([] as User[]);
@@ -17,6 +19,8 @@ export default function Users(): JSX.Element {
   const [role, setRole] = useState<Role>(Role.ADMIN);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const authData = JSON.parse(localStorage.getItem("authData")!);
   const navigate = useNavigate();
@@ -29,8 +33,11 @@ export default function Users(): JSX.Element {
 
     api.get("/users").then(({ data: users }) => {
       setUsers(users);
+      setLoading(false);
     });
   }, [navigate, authData.role]);
+
+  useClickAway(modalRef, () => setShowModal(false));
 
   function createUser(): void {
     if (
@@ -41,6 +48,8 @@ export default function Users(): JSX.Element {
       toast.error("Por favor, preencha os campos corretamente.");
       return;
     }
+
+    setLoading(true);
 
     const newUser = {
       name,
@@ -63,7 +72,8 @@ export default function Users(): JSX.Element {
         toast.error(
           "Erro ao criar usuário. Por favor, verifique os dados e tente novamente."
         );
-      });
+      })
+      .finally(() => setLoading(false));
   }
 
   function updateUser(): void {
@@ -71,6 +81,8 @@ export default function Users(): JSX.Element {
       toast.error("Por favor, preencha os campos corretamente.");
       return;
     }
+
+    setLoading(true);
 
     const newUser = {
       id,
@@ -97,10 +109,13 @@ export default function Users(): JSX.Element {
         toast.error(
           "Erro ao atualizar usuário. Por favor, verifique os dados e tente novamente."
         );
-      });
+      })
+      .finally(() => setLoading(false));
   }
 
   function deleteUser(userId: string): void {
+    setLoading(true);
+
     api
       .delete(`/users/delete/${userId}`)
       .then(() => {
@@ -116,7 +131,8 @@ export default function Users(): JSX.Element {
         toast.error(
           "Erro ao excluir usuário. Por favor, tente novamente mais tarde."
         );
-      });
+      })
+      .finally(() => setLoading(false));
   }
 
   function clear(): void {
@@ -129,6 +145,14 @@ export default function Users(): JSX.Element {
 
   function isStringEmpty(string: string): boolean {
     return string.trim() === "";
+  }
+
+  if (loading) {
+    return (
+      <div className="h-screen flex justify-center items-start">
+        <img src={loadingIcon} className="w-24 animate-spin mt-40" />
+      </div>
+    );
   }
 
   return (
@@ -189,7 +213,10 @@ export default function Users(): JSX.Element {
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center">
           <div className="fixed inset-0 bg-black opacity-50" />
-          <div className="bg-white p-6 rounded-lg shadow-lg z-10 w-full max-w-[600px]">
+          <div
+            className="bg-white p-6 rounded-lg shadow-lg z-10 w-full max-w-[600px]"
+            ref={modalRef}
+          >
             <div className="flex justify-between">
               <h2 className="text-2xl font-bold mb-4">Detalhes do Usuário</h2>
               <img

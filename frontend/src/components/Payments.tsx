@@ -6,10 +6,16 @@ import { api } from "../utils/axios";
 import { format, formatDate, parseISO } from "date-fns";
 import remove from "../assets/remove.svg";
 
-export default function Payments({ scheduleId }: { scheduleId: string }) {
+export default function Payments({
+  scheduleId,
+  price,
+}: {
+  scheduleId: string;
+  price: number | undefined;
+}) {
   const [payments, setPayments] = useState<Payment[]>([] as Payment[]);
   const [showPaymentForm, setShowPaymentForm] = useState<boolean>(false);
-  const [paymentAmount, setPaymentAmount] = useState<number>(1);
+  const [paymentAmount, setPaymentAmount] = useState<number>(price!);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     PaymentMethod.PIX
   );
@@ -36,10 +42,20 @@ export default function Payments({ scheduleId }: { scheduleId: string }) {
       scheduleId,
     };
 
-    api.post("/payments/new", newPayment).then(({ data }) => {
-      const newPayments = [...payments, data];
-      setPayments(newPayments);
-    });
+    api
+      .post("/payments/new", newPayment)
+      .then(({ data }) => {
+        const newPayments = [...payments, data];
+        setPayments(newPayments);
+        setShowPaymentForm(false);
+        toast.success("Pagamento adicionado com sucesso!");
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error(
+          "Ocorreu um erro ao salvar o pagamento. Por favor, tente novamente."
+        );
+      });
   }
 
   function deletePayment(paymentId: string): void {
@@ -66,7 +82,7 @@ export default function Payments({ scheduleId }: { scheduleId: string }) {
 
         <button
           type="button"
-          className="mt-3 p-2 bg-black text-white w-28 rounded-lg hover:opacity-80 transition-all duration-400"
+          className={`mt-3 p-2 w-28 rounded-lg hover:opacity-80 transition-all duration-400 ${showPaymentForm ? "bg-slate-200 text-black" : "bg-black text-white"}`}
           onClick={() =>
             showPaymentForm ? savePayment() : setShowPaymentForm(true)
           }
@@ -97,10 +113,18 @@ export default function Payments({ scheduleId }: { scheduleId: string }) {
                   key={payment.id}
                 >
                   <td className="border-t px-4 py-3 border-slate-300 text-center">
-                    {payment.amount}
+                    R${payment.amount}
                   </td>
                   <td className="border-t px-4 py-3 border-slate-300 text-center">
-                    {payment.method}
+                    {payment.method === PaymentMethod.PIX
+                      ? "PIX"
+                      : payment.method === PaymentMethod.CASH
+                      ? "Dinheiro"
+                      : payment.method === PaymentMethod.CREDIT
+                      ? "Cartão de Crédito"
+                      : payment.method === PaymentMethod.DEBIT
+                      ? "Cartão de Débito"
+                      : "Cheque"}
                   </td>
                   <td className="border-t px-4 py-2 border-slate-300 text-center">
                     {formatDate(payment.date, "dd/MM/yyyy")}
@@ -128,11 +152,10 @@ export default function Payments({ scheduleId }: { scheduleId: string }) {
               <input
                 type="number"
                 id="payment-amount"
-                placeholder="Insira a quantia aqui..."
                 className="outline-none bg-slate-200 ml-1 w-full"
                 min={1}
+                max={price}
                 value={paymentAmount}
-                maxLength={10}
                 onChange={(event) =>
                   setPaymentAmount(Number(event.target.value))
                 }

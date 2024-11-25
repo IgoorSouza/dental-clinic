@@ -27,8 +27,8 @@ export default class ScheduleService {
     const { professionalId, startTime, endTime } = schedule;
     const isScheduleAvailable = await this.isScheduleAvailable(
       professionalId,
-      startTime,
-      endTime
+      new Date(startTime),
+      new Date(endTime)
     );
 
     if (!isScheduleAvailable) throw new Error("Schedule is not available.");
@@ -37,11 +37,12 @@ export default class ScheduleService {
   }
 
   async updateSchedule(schedule: Schedule): Promise<Schedule> {
-    const { professionalId, startTime, endTime } = schedule;
+    const { id, professionalId, startTime, endTime } = schedule;
     const isScheduleAvailable = await this.isScheduleAvailable(
       professionalId,
-      startTime,
-      endTime
+      new Date(startTime),
+      new Date(endTime),
+      id
     );
 
     if (!isScheduleAvailable) throw new Error("Schedule is not available.");
@@ -56,19 +57,20 @@ export default class ScheduleService {
   private async isScheduleAvailable(
     professionalId: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
+    id?: string
   ): Promise<boolean> {
-    const schedules = await this.scheduleRepository.getSchedulesByProfessionalAndDate(
-      professionalId,
-      startTime,
-      endTime
+    const schedules = await this.scheduleRepository.getSchedulesByProfessional(
+      professionalId
     );
 
     for (const schedule of schedules) {
       if (
-        (startTime >= schedule.startTime && startTime < schedule.endTime) ||
-        (endTime > schedule.startTime && endTime <= schedule.endTime) ||
-        (startTime <= schedule.startTime && endTime >= schedule.endTime)
+        schedule.id !== id &&
+        ((startTime >= schedule.startTime && endTime <= schedule.endTime) ||
+          (startTime <= schedule.startTime && endTime >= schedule.endTime) ||
+          (startTime >= schedule.startTime && startTime < schedule.endTime) ||
+          (endTime > schedule.startTime && endTime <= schedule.endTime))
       ) {
         return false;
       }
