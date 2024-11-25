@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import Schedule from "../types/schedule";
 import Professional from "../types/professional";
 import Customer from "../types/customer";
-import { addHours, format, parseISO, subHours } from "date-fns";
+import { addHours, format, isValid, parseISO, subHours } from "date-fns";
 import Payments from "../components/Payments";
 import { useClickAway } from "react-use";
 import loadingIcon from "../assets/loading.svg";
@@ -91,12 +91,14 @@ export default function Schedules(): JSX.Element {
     const newSchedule: Schedule = {
       title,
       price,
-      startTime: addHours(startTime, 3),
-      endTime: addHours(endTime, 3),
+      startTime,
+      endTime,
       customerId: selectedCustomer.id!,
       professionalId: selectedProfessional.id,
       description,
     };
+
+    console.log(newSchedule)
 
     api
       .post("/schedules/new", newSchedule)
@@ -143,8 +145,8 @@ export default function Schedules(): JSX.Element {
       id,
       title,
       price,
-      startTime: addHours(startTime, 3),
-      endTime: addHours(endTime, 3),
+      startTime,
+      endTime,
       customerId: selectedCustomer.id!,
       professionalId: selectedProfessional.id,
       description,
@@ -320,18 +322,10 @@ export default function Schedules(): JSX.Element {
                   setDescription(schedule.description ?? "");
                   setPrice(schedule.price);
                   setStartTime(
-                    new Date(
-                      new Date(schedule.startTime).setHours(
-                        new Date(schedule.startTime).getHours() - 3
-                      )
-                    )
+                    parseISO(schedule.startTime.toString())
                   );
                   setEndTime(
-                    new Date(
-                      new Date(schedule.endTime).setHours(
-                        new Date(schedule.endTime).getHours() - 3
-                      )
-                    )
+                    parseISO(schedule.endTime.toString())
                   );
                   setSelectedProfessional(() =>
                     professionals.find(
@@ -351,8 +345,8 @@ export default function Schedules(): JSX.Element {
                   {schedule.title}
                 </td>
                 <td className="border-t px-4 py-3 border-slate-300 text-center">
-                  {format(parseISO(schedule.startTime.toString()), "HH:mm")} -{" "}
-                  {format(parseISO(schedule.endTime.toString()), "HH:mm")}
+                  {format(addHours(parseISO(schedule.startTime.toString()), 3), "HH:mm")} -{" "}
+                  {format(addHours(parseISO(schedule.endTime.toString()), 3), "HH:mm")}
                 </td>
                 <td className="border-t px-4 py-2 border-slate-300 text-center">
                   {
@@ -440,16 +434,17 @@ export default function Schedules(): JSX.Element {
                       Horário de início<span className="text-red-600">*</span>
                     </label>
                     <input
-                      type="datetime-local"
+                      type="time"
                       id="schedule-start-time"
-                      placeholder="Insira o horário de início aqui..."
                       className="p-3 mb-4 w-full rounded-lg outline-none bg-slate-200"
-                      value={
-                        startTime ? startTime.toISOString().slice(0, 16) : ""
-                      }
-                      onChange={(event) =>
-                        setStartTime(subHours(parseISO(event.target.value), 3))
-                      }
+                      value={format(addHours(startTime, 3), "HH:mm")}
+                      onChange={(event) => {
+                        const [hours, minutes] = event.target.value.split(":");
+                        const date = new Date(startTime);
+                        date.setHours(parseInt(hours, 10));
+                        date.setMinutes(parseInt(minutes, 10));
+                        if (isValid(date)) setStartTime(subHours(date, 3));
+                      }}
                     />
                   </div>
                   <div className="flex flex-col w-1/2">
@@ -457,14 +452,17 @@ export default function Schedules(): JSX.Element {
                       Horário de fim<span className="text-red-600">*</span>
                     </label>
                     <input
-                      type="datetime-local"
+                      type="time"
                       id="schedule-end-time"
-                      placeholder="Insira o horário de fim aqui..."
                       className="p-3 mb-3 rounded-lg outline-none bg-slate-200"
-                      value={endTime ? endTime.toISOString().slice(0, 16) : ""}
-                      onChange={(event) =>
-                        setEndTime(subHours(parseISO(event.target.value), 3))
-                      }
+                      value={format(addHours(endTime, 3), "HH:mm")}
+                      onChange={(event) => {
+                        const [hours, minutes] = event.target.value.split(":");
+                        const date = new Date(endTime);
+                        date.setHours(parseInt(hours, 10));
+                        date.setMinutes(parseInt(minutes, 10));
+                        if (isValid(date)) setEndTime(subHours(date, 3));
+                      }}
                     />
                   </div>
                 </div>

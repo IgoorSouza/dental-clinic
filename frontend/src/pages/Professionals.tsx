@@ -73,7 +73,6 @@ export default function Professionals(): JSX.Element {
   }
 
   function updateProfessional(): void {
-    console.log(phone, !isStringEmpty(phone!), !phone?.includes("_"));
     if (
       isStringEmpty(name) ||
       isStringEmpty(crm) ||
