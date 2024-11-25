@@ -440,7 +440,7 @@ export default function Schedules(): JSX.Element {
                       value={format(addHours(startTime, 3), "HH:mm")}
                       onChange={(event) => {
                         const [hours, minutes] = event.target.value.split(":");
-                        const date = new Date(startTime);
+                        const date = new Date();
                         date.setHours(parseInt(hours, 10));
                         date.setMinutes(parseInt(minutes, 10));
                         if (isValid(date)) setStartTime(subHours(date, 3));
@@ -458,7 +458,7 @@ export default function Schedules(): JSX.Element {
                       value={format(addHours(endTime, 3), "HH:mm")}
                       onChange={(event) => {
                         const [hours, minutes] = event.target.value.split(":");
-                        const date = new Date(endTime);
+                        const date = new Date();
                         date.setHours(parseInt(hours, 10));
                         date.setMinutes(parseInt(minutes, 10));
                         if (isValid(date)) setEndTime(subHours(date, 3));
