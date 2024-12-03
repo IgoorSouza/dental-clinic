@@ -1,8 +1,6 @@
 import Customer from "./customer";
 
-type CustomersData = {
+export default interface CustomersData {
   totalCustomers: number;
   customers: Customer[];
-};
-
-export default CustomersData;
+}

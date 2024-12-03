@@ -49,7 +49,10 @@ export default function Customers(): JSX.Element {
     if (customerPhoneRef) mask.mask(customerPhoneRef);
   }, [showModal]);
 
-  useClickAway(modalRef, () => setShowModal(false));
+  useClickAway(modalRef, () => {
+    setShowModal(false);
+    clear();
+  });
 
   function getCustomers(): void {
     setLoading(true);

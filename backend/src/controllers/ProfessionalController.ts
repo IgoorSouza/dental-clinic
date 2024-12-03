@@ -1,68 +1,64 @@
-import { Express, Router } from "express";
+import { Express, Router, Request, Response } from "express";
 import ProfessionalService from "../services/ProfessionalService";
 import AuthGuard from "../middlewares/AuthGuard";
 
 export default class ProfessionalController {
   private professionalService: ProfessionalService;
-  private router: Router;
 
   constructor(server: Express) {
     this.professionalService = new ProfessionalService();
-    this.router = Router();
+    const router = Router();
 
-    this.router.use(AuthGuard.verifyAuthencation);
+    router.use(AuthGuard.verifyAuthencation);
+    router.get("/", this.getProfessionals.bind(this));
+    router.post("/new", this.createProfessional.bind(this));
+    router.put("/update", this.updateProfessional.bind(this));
+    router.delete("/delete/:id", this.deleteProfessional.bind(this));
 
-    this.router.get("/", async (request, response) => {
-      try {
-        const professionals = await this.professionalService.getProfessionals();
-        response.status(200).send(professionals);
-      } catch (error: any) {
-        console.log(error);
-        response.status(500).send("Error while getting professionals.");
-      }
-    });
+    server.use("/professionals", router);
+  }
 
-    this.router.post("/new", async (request, response) => {
-      try {
-        const professional = await this.professionalService.createProfessional(
-          request.body
-        );
-        response.status(200).send(professional);
-      } catch (error: any) {
-        console.log(error);
-        response.status(500).send("Error while creating professional.");
-      }
-    });
+  private async getProfessionals(request: Request, response: Response) {
+    try {
+      const professionals = await this.professionalService.getProfessionals();
+      response.status(200).send(professionals);
+    } catch (error: any) {
+      console.log(error);
+      response.status(500).send("Error while getting professionals.");
+    }
+  }
 
-    this.router.put(
-      "/update",
+  private async createProfessional(request: Request, response: Response) {
+    try {
+      const professional = await this.professionalService.createProfessional(
+        request.body
+      );
+      response.status(200).send(professional);
+    } catch (error: any) {
+      console.log(error);
+      response.status(500).send("Error while creating professional.");
+    }
+  }
 
-      async (request, response) => {
-        try {
-          const professional =
-            await this.professionalService.updateProfessional(request.body);
-          response.status(200).send(professional);
-        } catch (error: any) {
-          console.log(error);
-          response.status(500).send("Error while updating professional.");
-        }
-      }
-    );
+  private async updateProfessional(request: Request, response: Response) {
+    try {
+      const professional = await this.professionalService.updateProfessional(
+        request.body
+      );
+      response.status(200).send(professional);
+    } catch (error: any) {
+      console.log(error);
+      response.status(500).send("Error while updating professional.");
+    }
+  }
 
-    this.router.delete(
-      "/delete/:id",
-
-      async (request, response) => {
-        try {
-          await this.professionalService.deleteProfessional(request.params.id);
-          response.status(200).send("Professional successfully deleted.");
-        } catch (error: any) {
-          console.log(error);
-          response.status(500).send("Error while deleting professional.");
-        }
-      }
-    );
-
-    server.use("/professionals", this.router);
+  private async deleteProfessional(request: Request, response: Response) {
+    try {
+      await this.professionalService.deleteProfessional(request.params.id);
+      response.status(200).send("Professional successfully deleted.");
+    } catch (error: any) {
+      console.log(error);
+      response.status(500).send("Error while deleting professional.");
+    }
   }
 }

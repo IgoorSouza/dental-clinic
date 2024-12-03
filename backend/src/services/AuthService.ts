@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import JwtService from "../services/JwtService";
 import UserRepository from "../repositories/UserRepository";
-import AuthData from "../types/auth-data";
+import AuthData from "../interfaces/auth-data";
 
 export default class AuthService {
   private userRepository: UserRepository;

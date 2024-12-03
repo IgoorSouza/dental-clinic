@@ -1,4 +1,4 @@
-type Schedule = {
+export default interface Schedule {
   id: string;
   title: string;
   description: string | null;
@@ -7,6 +7,4 @@ type Schedule = {
   endTime: Date;
   professionalId: string;
   customerId: string;
-};
-
-export default Schedule;
+}

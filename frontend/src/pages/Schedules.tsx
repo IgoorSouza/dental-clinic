@@ -50,23 +50,36 @@ export default function Schedules(): JSX.Element {
   );
 
   useEffect(() => {
+    setLoading(true);
+
     api
       .get(`/schedules?date=${date}&professionalId=${selectedProfessional?.id}`)
       .then(({ data: schedules }) => {
         setSchedules(schedules);
+        setLoading(false);
       });
 
-    api.get("/customers?page=1&pageSize=10000").then(({ data: customers }) => {
-      setCustomers(customers.customers);
-    });
+    if (customers.length === 0) {
+      api
+        .get("/customers?page=1&pageSize=10000")
+        .then(({ data: customers }) => {
+          setCustomers(customers.customers);
+        });
+    }
 
-    api.get("/professionals").then(({ data: professionals }) => {
-      setProfessionals(professionals);
-      if (!selectedProfessional?.id) setSelectedProfessional(professionals[0]);
-      setLoading(false);
-    });
+    if (professionals.length === 0) {
+      api.get("/professionals").then(({ data: professionals }) => {
+        setProfessionals(professionals);
+        if (!selectedProfessional?.id)
+          setSelectedProfessional(professionals[0]);
+      });
+    }
   }, [date, selectedProfessional]);
-  useClickAway(modalRef, () => setShowModal(false));
+
+  useClickAway(modalRef, () => {
+    setShowModal(false);
+    clear();
+  });
 
   function createSchedule(): void {
     if (
@@ -98,7 +111,7 @@ export default function Schedules(): JSX.Element {
       description,
     };
 
-    console.log(newSchedule)
+    console.log(newSchedule);
 
     api
       .post("/schedules/new", newSchedule)
@@ -321,12 +334,8 @@ export default function Schedules(): JSX.Element {
                   setTitle(schedule.title);
                   setDescription(schedule.description ?? "");
                   setPrice(schedule.price);
-                  setStartTime(
-                    parseISO(schedule.startTime.toString())
-                  );
-                  setEndTime(
-                    parseISO(schedule.endTime.toString())
-                  );
+                  setStartTime(parseISO(schedule.startTime.toString()));
+                  setEndTime(parseISO(schedule.endTime.toString()));
                   setSelectedProfessional(() =>
                     professionals.find(
                       (professional) =>
@@ -345,8 +354,15 @@ export default function Schedules(): JSX.Element {
                   {schedule.title}
                 </td>
                 <td className="border-t px-4 py-3 border-slate-300 text-center">
-                  {format(addHours(parseISO(schedule.startTime.toString()), 3), "HH:mm")} -{" "}
-                  {format(addHours(parseISO(schedule.endTime.toString()), 3), "HH:mm")}
+                  {format(
+                    addHours(parseISO(schedule.startTime.toString()), 3),
+                    "HH:mm"
+                  )}{" "}
+                  -{" "}
+                  {format(
+                    addHours(parseISO(schedule.endTime.toString()), 3),
+                    "HH:mm"
+                  )}
                 </td>
                 <td className="border-t px-4 py-2 border-slate-300 text-center">
                   {

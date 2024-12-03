@@ -1,67 +1,66 @@
-import { Express, Router } from "express";
+import { Express, Router, Request, Response } from "express";
 import AuthGuard from "../middlewares/AuthGuard";
 import CustomerService from "../services/CustomerService";
 
 export default class CustomerController {
   private customerService: CustomerService;
-  private router: Router;
 
   constructor(server: Express) {
     this.customerService = new CustomerService();
-    this.router = Router();
+    const router = Router();
 
-    this.router.use(AuthGuard.verifyAuthencation);
+    router.use(AuthGuard.verifyAuthencation);
+    router.get("/", this.getCustomers.bind(this));
+    router.post("/new", this.createCustomer.bind(this));
+    router.put("/update", this.updateCustomer.bind(this));
+    router.delete("/delete/:id", this.deleteCustomer.bind(this));
+    
+    server.use("/customers", router);
+  }
 
-    this.router.get("/", async (request, response) => {
-      try {
-        const { page, pageSize, name } = request.query;
+  private async getCustomers(request: Request, response: Response) {
+    try {
+      const { page, pageSize, name } = request.query;
 
-        const customersData = await this.customerService.getCustomers(
-          page as string,
-          pageSize as string,
-          name as string
-        );
-        response.status(200).send(customersData);
-      } catch (error: any) {
-        console.log(error);
-        response.status(500).send("Error while getting customers.");
-      }
-    });
+      const customersData = await this.customerService.getCustomers(
+        page as string,
+        pageSize as string,
+        name as string
+      );
+      response.status(200).send(customersData);
+    } catch (error: any) {
+      console.log(error);
+      response.status(500).send("Error while getting customers.");
+    }
+  }
 
-    this.router.post("/new", async (request, response) => {
-      try {
-        const customer = await this.customerService.createCustomer(
-          request.body
-        );
-        response.status(200).send(customer);
-      } catch (error: any) {
-        console.log(error);
-        response.status(500).send("Error while creating customer.");
-      }
-    });
+  private async createCustomer(request: Request, response: Response) {
+    try {
+      const customer = await this.customerService.createCustomer(request.body);
+      response.status(200).send(customer);
+    } catch (error: any) {
+      console.log(error);
+      response.status(500).send("Error while creating customer.");
+    }
+  }
 
-    this.router.put("/update", async (request, response) => {
-      try {
-        const customer = await this.customerService.updateCustomer(
-          request.body
-        );
-        response.status(200).send(customer);
-      } catch (error: any) {
-        console.log(error);
-        response.status(500).send("Error while updating customer.");
-      }
-    });
+  private async updateCustomer(request: Request, response: Response) {
+    try {
+      const customer = await this.customerService.updateCustomer(request.body);
+      response.status(200).send(customer);
+    } catch (error: any) {
+      console.log(error);
+      response.status(500).send("Error while updating customer.");
+    }
+  }
 
-    this.router.delete("/delete/:id", async (request, response) => {
-      try {
-        await this.customerService.deleteCustomer(request.params.id);
-        response.status(200).send("Customer successfully deleted.");
-      } catch (error: any) {
-        console.log(error);
-        response.status(500).send("Error while deleting customer.");
-      }
-    });
-
-    server.use("/customers", this.router);
+  private async deleteCustomer(request: Request, response: Response) {
+    try {
+      await this.customerService.deleteCustomer(request.params.id);
+      response.status(200).send("Customer successfully deleted.");
+    } catch (error: any) {
+      console.log(error);
+      response.status(500).send("Error while deleting customer.");
+    }
   }
 }

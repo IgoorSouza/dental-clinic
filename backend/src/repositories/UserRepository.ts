@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Prisma } from "../prisma/PrismaClient";
-import User from "../types/user";
+import User from "../interfaces/user";
 
 export default class UserRepository {
   private prisma: PrismaClient = Prisma.getInstance();

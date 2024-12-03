@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Prisma } from "../prisma/PrismaClient";
-import Professional from "../types/professional";
+import Professional from "../interfaces/professional";
 
 export default class ProfessionalRepository {
   private prisma: PrismaClient = Prisma.getInstance();

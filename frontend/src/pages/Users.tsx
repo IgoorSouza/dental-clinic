@@ -37,7 +37,10 @@ export default function Users(): JSX.Element {
     });
   }, [navigate, authData.role]);
 
-  useClickAway(modalRef, () => setShowModal(false));
+  useClickAway(modalRef, () => {
+    setShowModal(false);
+    clear();
+  });
 
   function createUser(): void {
     if (
@@ -119,6 +122,12 @@ export default function Users(): JSX.Element {
     api
       .delete(`/users/delete/${userId}`)
       .then(() => {
+        if (email === authData.email) {
+          localStorage.removeItem("authData");
+          navigate("/auth");
+          return;
+        }
+
         const updatedUsers = users.filter((user) => user.id !== userId);
         setUsers(updatedUsers);
         setShowModal(false);
@@ -182,7 +191,8 @@ export default function Users(): JSX.Element {
                 className="hover:cursor-pointer hover:bg-slate-200 transition-all duration-400"
                 key={user.id}
                 onClick={() => {
-                  if (user.role === Role.OWNER) return;
+                  if (user.role === Role.OWNER && authData.role !== Role.OWNER)
+                    return;
 
                   setId(user.id);
                   setName(user.name);
@@ -302,7 +312,7 @@ export default function Users(): JSX.Element {
                   </div>
                 )}
 
-                {id && role !== Role.OWNER && (
+                {id && (
                   <div className="flex justify-end gap-x-4">
                     <button
                       type="button"
@@ -312,7 +322,7 @@ export default function Users(): JSX.Element {
                       Atualizar
                     </button>
 
-                    {email !== authData.email && (
+                    {role !== Role.OWNER && (
                       <button
                         type="button"
                         className="mt-5 p-2 bg-red-500 text-white w-28 rounded-lg hover:opacity-80 transition-all duration-400"

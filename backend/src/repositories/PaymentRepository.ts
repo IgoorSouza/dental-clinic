@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Prisma } from "../prisma/PrismaClient";
-import Payment from "../types/payment";
+import Payment from "../interfaces/payment";
 
 export default class PaymentRepository {
   private prisma: PrismaClient = Prisma.getInstance();

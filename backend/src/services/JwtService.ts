@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../types/user";
+import User from "../interfaces/user";
 
 export default class JwtService {
   private static jwtSecret: string = process.env.JWT_SECRET!;

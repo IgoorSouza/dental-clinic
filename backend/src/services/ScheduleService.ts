@@ -1,5 +1,5 @@
+import Schedule from "../interfaces/schedule";
 import ScheduleRepository from "../repositories/ScheduleRepository";
-import Schedule from "../types/schedule";
 
 export default class ScheduleService {
   private scheduleRepository: ScheduleRepository;

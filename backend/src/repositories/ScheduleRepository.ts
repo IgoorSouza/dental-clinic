@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Prisma } from "../prisma/PrismaClient";
-import Schedule from "../types/schedule";
+import Schedule from "../interfaces/schedule";
 
 export default class ScheduleRepository {
   private prisma: PrismaClient = Prisma.getInstance();
@@ -23,28 +23,6 @@ export default class ScheduleRepository {
     return await this.prisma.schedule.findMany({
       where: {
         professionalId,
-        AND: [
-          {
-            startTime: {
-              gte: startTime,
-            },
-            endTime: {
-              lte: endTime,
-            },
-          },
-        ],
-      },
-    });
-  }
-
-  async getSchedulesByCustomerAndDate(
-    customerId: string,
-    startTime: Date,
-    endTime: Date
-  ): Promise<Schedule[]> {
-    return await this.prisma.schedule.findMany({
-      where: {
-        customerId,
         AND: [
           {
             startTime: {

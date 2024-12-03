@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import User from "../types/user";
 import { Role } from "@prisma/client";
 import JwtService from "../services/JwtService";
+import User from "../interfaces/user";
 
 export default class AuthGuard {
   static verifyAuthencation(

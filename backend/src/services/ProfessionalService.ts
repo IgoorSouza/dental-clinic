@@ -1,5 +1,5 @@
+import Professional from "../interfaces/professional";
 import ProfessionalRepository from "../repositories/ProfessionalRepository";
-import Professional from "../types/professional";
 
 export default class ProfessionalService {
   private professionalRepository: ProfessionalRepository;

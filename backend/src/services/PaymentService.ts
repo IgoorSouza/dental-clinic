@@ -1,5 +1,5 @@
+import Payment from "../interfaces/payment";
 import PaymentRepository from "../repositories/PaymentRepository";
-import Payment from "../types/payment";
 
 export default class PaymentService {
   private paymentRepository: PaymentRepository;

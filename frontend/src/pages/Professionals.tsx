@@ -34,7 +34,10 @@ export default function Professionals(): JSX.Element {
     if (professionalPhoneRef) mask.mask(professionalPhoneRef);
   }, [showModal]);
 
-  useClickAway(modalRef, () => setShowModal(false));
+  useClickAway(modalRef, () => {
+    setShowModal(false);
+    clear();
+  });
 
   function createProfessional(): void {
     if (
