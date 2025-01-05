@@ -1,8 +1,8 @@
 export default interface Customer {
-  id: string;
+  id?: string;
   name: string;
   phone: string;
-  birthDate?: Date | null;
+  birthDate?: Date | string | null;
   email?: string | null;
   description?: string | null;
 }

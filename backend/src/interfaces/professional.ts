@@ -1,5 +1,5 @@
 export default interface Professional {
-  id: string;
+  id?: string;
   name: string;
   crm: string;
   phone: string | null;

@@ -32,10 +32,6 @@ export default class UserService {
   }
 
   async updateUser(user: User): Promise<User> {
-    if (user.email === process.env.OWNER_EMAIL) {
-      throw new Error("Not possible to change the system's owner data.");
-    }
-
     const encryptedPassword = user.password
       ? await bcrypt.hash(user.password, 10)
       : undefined;
@@ -53,7 +49,7 @@ export default class UserService {
       throw new Error("There's no user with the informed id.");
     }
 
-    if (user.email === process.env.OWNER_EMAIL) {
+    if (user.role === Role.OWNER) {
       throw new Error("Not possible to delete the system's owner.");
     }
 

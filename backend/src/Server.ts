@@ -1,7 +1,6 @@
 import express, { Express } from "express";
 import cors from "cors";
 import { Role } from "@prisma/client";
-import bcrypt from "bcrypt";
 import UserController from "./controllers/UserController";
 import CustomerController from "./controllers/CustomerController";
 import PaymentController from "./controllers/PaymentController";
@@ -46,7 +45,7 @@ export default class Server {
       await this.userService.createUser({
         name: process.env.OWNER_NAME!,
         email: process.env.OWNER_EMAIL!,
-        password: await bcrypt.hash(process.env.OWNER_PASSWORD!, 10),
+        password: process.env.OWNER_PASSWORD!,
         role: Role.OWNER,
       });
     }

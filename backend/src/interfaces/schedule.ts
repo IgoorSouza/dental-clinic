@@ -1,10 +1,10 @@
 export default interface Schedule {
-  id: string;
+  id?: string;
   title: string;
   description: string | null;
   price: number;
-  startTime: Date;
-  endTime: Date;
+  startTime: Date | string;
+  endTime: Date | string;
   professionalId: string;
   customerId: string;
 }
