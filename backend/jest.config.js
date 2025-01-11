@@ -4,4 +4,8 @@ module.exports = {
   transform: {
     "^.+.tsx?$": ["ts-jest",{}],
   },
+  coveragePathIgnorePatterns: [
+    "/src/repositories",
+    "/src/prisma"
+  ]
 };
