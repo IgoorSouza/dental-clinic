@@ -221,4 +221,38 @@ describe("ScheduleService", () => {
       MockScheduleRepository.prototype.getSchedulesByProfessional
     ).toHaveBeenCalledWith(professionalId);
   });
+
+  it("Should return false if schedule is unavailable", async () => {
+    const professionalId = "1";
+    const newStartTime = new Date("2025-01-05T07:00:00");
+    const newEndTime = new Date("2025-01-05T10:00:00");
+
+    const mockSchedules: Schedule[] = [
+      {
+        id: "2",
+        title: "Consulta 1",
+        description: "Descrição",
+        price: 100,
+        startTime: new Date("2025-01-05T08:00:00"),
+        endTime: new Date("2025-01-05T09:00:00"),
+        professionalId,
+        customerId: "3",
+      },
+    ];
+
+    MockScheduleRepository.prototype.getSchedulesByProfessional.mockResolvedValue(
+      mockSchedules
+    );
+
+    const result = await scheduleService["isScheduleAvailable"](
+      professionalId,
+      newStartTime,
+      newEndTime
+    );
+
+    expect(result).toBe(false);
+    expect(
+      MockScheduleRepository.prototype.getSchedulesByProfessional
+    ).toHaveBeenCalledWith(professionalId);
+  });
 });

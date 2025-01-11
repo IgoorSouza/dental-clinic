@@ -48,9 +48,34 @@ describe("UserService", () => {
     expect(MockUserRepository.prototype.getUserById).toHaveBeenCalledWith("1");
   });
 
-  it("Should return null if user not found", async () => {
+  it("Should get user by email", async () => {
+    const email = "igor.castro@estudante.iftm.edu.br";
+
+    const mockUser: User = {
+      id: "1",
+      name: "Igor Souza de Castro",
+      email,
+      password: "123",
+      role: Role.ADMIN,
+    };
+
+    MockUserRepository.prototype.getUserByEmail.mockResolvedValue(mockUser);
+
+    const result = await userService.getUserByEmail(email);
+
+    expect(result).toEqual(mockUser);
+    expect(MockUserRepository.prototype.getUserById).toHaveBeenCalledWith("1");
+  });
+
+  it("Should return null if user not found by id", async () => {
     MockUserRepository.prototype.getUserById.mockResolvedValue(null);
     const result = await userService.getUserById("0");
+    expect(result).toBeNull();
+  });
+
+  it("Should return null if user not found by email", async () => {
+    MockUserRepository.prototype.getUserByEmail.mockResolvedValue(null);
+    const result = await userService.getUserByEmail("igor.castro@estudante.iftm.edu.br");
     expect(result).toBeNull();
   });
 
@@ -143,6 +168,16 @@ describe("UserService", () => {
 
     await expect(userService.deleteUser(userId)).rejects.toThrow(
       "Not possible to delete the system's owner."
+    );
+  });
+
+  it("Should throw error when deleting non-existent user", async () => {
+    const userId = "1";
+
+    MockUserRepository.prototype.getUserById.mockResolvedValue(null);
+
+    await expect(userService.deleteUser(userId)).rejects.toThrow(
+      "There's no user with the informed id."
     );
   });
 });
